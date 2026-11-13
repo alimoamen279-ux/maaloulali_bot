@@ -1,12 +1,26 @@
 import os
 from telegram.ext import ApplicationBuilder, CommandHandler
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-# استحباص التوكن من متغيرات البيئة في ريل واي
+# استدعاء التوكن من متغيرات البيئة في ريل واي
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-# دالة الترحيب عند إرسال /start
+# دالة الترحيب وإرسال الرسالة مع الأزرار التفاعلية
 async def start(update, context):
-    await update.message.reply_text("أهلاً بك! البوت يعمل بنجاح تام.")
+    # تصميم الأزرار (كل مصفوفة تمثل صفاً من الأزرار)
+    keyboard = [
+        [InlineKeyboardButton("📋 القائمة الرئيسية", callback_data="main_menu")],
+        [InlineKeyboardButton("🌐 تغيير الدولة", callback_data="change_country")],
+        [InlineKeyboardButton("🔑 جروب البوت", url="https://t.me/your_group")] # استبدل الرابط برابط جروبك الحقيقي
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    # إرسال الرسالة مع الأزرار
+    await update.message.reply_text(
+        "أهلاً بك في بوت الخدمات والأرقام.\nاختر من الأزرار بالأسفل:",
+        reply_markup=reply_markup
+    )
 
 def main():
     # إنشاء تطبيق البوت
@@ -20,5 +34,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
   
 
