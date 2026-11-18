@@ -18,10 +18,8 @@ class AutoFolderNumberManager:
         self.load_all_txt_files()
 
     def load_all_txt_files(self):
-        txt_files = [f for f in os.listdir('.') if f.endswith('.txt']
+        txt_files = [f for f in os.listdir('.') if f.endswith('.txt') and f != 'requirements.txt']
         for filename in txt_files:
-            if filename == 'requirements.txt':
-                continue
             country_name = filename.replace('.txt', '').strip()
             numbers_list = []
             try:
@@ -64,7 +62,6 @@ def handle_text_messages(message):
     chat_id = message.chat.id
 
     if text == "📞 الحصول على رقم":
-        # تصميم جديد ومميز لأزرار الخدمات (مرتبة بشكل أنيق وجذاب)
         markup = types.InlineKeyboardMarkup(row_width=2)
         markup.add(
             types.InlineKeyboardButton("📘 Facebook", callback_data="service_facebook"),
@@ -171,6 +168,7 @@ def back_navigation(call):
 
 if __name__ == "__main__":
     bot.infinity_polling()
+
                     
 
 
