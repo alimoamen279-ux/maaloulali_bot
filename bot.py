@@ -168,6 +168,43 @@ def back_navigation(call):
 
 if __name__ == "__main__":
     bot.infinity_polling()
+import os
+import logging
+import random
+import telebot
+from telebot import types
+
+TOKEN = os.environ.get('BOT_TOKEN', 'YOUR_BOT_TOKEN_HERE')
+bot = telebot.TeleBot(TOKEN)
+
+# (باقي كود قراءة الملفات والدوال السابقة موجود هنا...)
+
+# هذا هو المكان الذي تضع فيه كود إرسال الكود النصي:
+@bot.callback_query_handler(func=lambda call: call.data.startswith("copy_"))
+def send_sms_code(call):
+    phone_num = call.data.replace("copy_", "")
+    
+    # محاكاة توليد كود التحقق (يمكنك استبداله لاحقاً بالكود الحقيقي الوارد)
+    verification_code = random.randint(10000, 99999)
+    
+    # نص الرسالة النصية التي تصل للمستخدم بها الكود
+    sms_message = (
+        f"📩 **تم استلام رسالة نصية جديدة!**\n\n"
+        f"📱 الرقم: `+{phone_num}`\n"
+        f"🔑 **كود التفعيل:** `{verification_code}`\n\n"
+        f"⚠️ تنبيه: لا تشارك هذا الكود مع أي شخص أبداً."
+    )
+    
+    # إرسال الرسالة للمستخدم
+    bot.send_message(
+        chat_id=call.message.chat.id,
+        text=sms_message,
+        parse_mode="Markdown"
+    )
+    
+    bot.answer_callback_query(call.id, f"تم إرسال كود التحقق للرقم +{phone_num}", show_alert=False)
+
+# (باقي الدوال مثل القائمة الرئيسية وباقي الكود...)
 
                     
 
