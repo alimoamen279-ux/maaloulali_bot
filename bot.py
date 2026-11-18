@@ -1,4 +1,3 @@
-
 import os
 import logging
 import random
@@ -15,16 +14,11 @@ logging.basicConfig(
 
 class AutoFolderNumberManager:
     def __init__(self):
-        self.country_numbers = {} # تخزين الأرقام مقسمة حسب اسم الدولة
+        self.country_numbers = {}
         self.load_all_txt_files()
 
     def load_all_txt_files(self):
         txt_files = [f for f in os.listdir('.') if f.endswith('.txt') and f != 'requirements.txt']
-        
-        if not txt_files:
-            logging.error("لم يتم العثور على أي ملفات نصية (.txt) في المجلد الرئيسي!")
-            return
-
         for filename in txt_files:
             country_name = filename.replace('.txt', '').strip()
             numbers_list = []
@@ -34,79 +28,145 @@ class AutoFolderNumberManager:
                         cleaned_number = line.strip()
                         if cleaned_number:
                             numbers_list.append(cleaned_number)
-                
                 if numbers_list:
                     self.country_numbers[country_name] = numbers_list
-                    logging.info(f"تم بنجاح تحميل {len(numbers_list)} رقماً لدولة: {country_name}")
-            
+                    logging.info(f"تم تحميل {len(numbers_list)} رقماً لدولة: {country_name}")
             except Exception as e:
-                logging.error(f"حدث خطأ أثناء قراءة الملف {filename}: {e}")
+                logging.error(f"خطأ في قراءة {filename}: {e}")
 
 number_manager = AutoFolderNumberManager()
 
-# أمر البدء /start
+# دالة إنشاء لوحة المفاتيح الرئيسية الثابتة في أسفل الشاشة (Reply Keyboard)
+def get_main_reply_keyboard():
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+    btn_get_num = types.KeyboardButton("📞 الحصول على رقم")
+    btn_share = types.KeyboardButton("📊 شارك واربح")
+    btn_stats = types.KeyboardButton("👤 الإحصائيات")
+    btn_trafic = types.KeyboardButton("🔴 الترافيك المباشر")
+    btn_prices = types.KeyboardButton("🌍 أرباح الدول")
+    btn_about = types.KeyboardButton("ℹ️ حول البوت")
+    markup.add(btn_get_num, btn_share, btn_stats, btn_trafic, btn_prices, btn_about)
+    return markup
+
+# أمر /start وإظهار القائمة الرئيسية
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    markup = types.InlineKeyboardMarkup(row_width=1)
-    btn1 = types.InlineKeyboardButton("📞 الحصول على رقم", callback_data="get_number_menu")
-    btn2 = types.InlineKeyboardButton("🌍 تغيير الدولة", callback_data="get_number_menu")
-    btn3 = types.InlineKeyboardButton("🔑 جروب البوت", url="https://t.me/your_group_link")
-    
-    markup.add(btn1, btn2, btn3)
-    
     bot.send_message(
-        message.chat.id, 
-        f"أهلاً بك في بوت الخدمات والأرقام! 🤖\nتم تحميل الأرقام من جميع الدول بنجاح.", 
-        reply_markup=markup
+        message.chat.id,
+        "🏠 **القائمة الرئيسية**\n\nاختر الخدمة المطلوبة من الأزرار بالأسفل:",
+        parse_mode="Markdown",
+        reply_markup=get_main_reply_keyboard()
     )
 
-# عرض قائمة الدول عند الضغط على الحصول على رقم أو تغيير الدولة
-@bot.callback_query_handler(func=lambda call: call.data in ["get_number_menu", "change_country"])
-def show_countries(call):
+# التعامل مع الأزرار الثابتة في الأسفل
+@bot.message_handler(func=lambda message: True)
+def handle_text_messages(message):
+    text = message.text
+    chat_id = message.chat.id
+
+    if text == "📞 الحصول على رقم":
+        # عرض خدمات التواصل الاجتماعي مثل الصورة
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        markup.add(
+            types.InlineKeyboardButton("📘 Facebook", callback_data="service_facebook"),
+            types.InlineKeyboardButton("💚 WhatsApp", callback_data="service_whatsapp"),
+            types.InlineKeyboardButton("📸 Instagram", callback_data="service_instagram"),
+            types.InlineKeyboardButton("🎵 TikTok", callback_data="service_tiktok")
+        )
+        bot.send_message(chat_id, "🌐 **اختر الخدمة المطلوبة** 👇", parse_mode="Markdown", reply_markup=markup)
+
+    elif text == "👤 الإحصائيات":
+        stats_text = (
+            "📊 **إحصائياتك الخاصة**\n\n"
+            f"👤 الاسم: {message.from_user.first_name}\n"
+            f"🆔 معرفك: `{message.from_user.id}`\n"
+            f"📦 إجمالي الأرقام المتاحة بالبوت: {sum(len(v) for v in number_manager.country_numbers.values())}"
+        )
+        bot.send_message(chat_id, stats_text, parse_mode="Markdown")
+
+    elif text == "ℹ️ حول البوت":
+        bot.send_message(chat_id, "🤖 هذا البوت مخصص للتحقق من الأرقام وخدمات التفعيل السريع تعمل على مدار الساعة 24/7.")
+
+    elif text in ["📊 شارك واربح", "🔴 الترافيك المباشر", "🌍 أرباح الدول"]:
+        bot.send_message(chat_id, "🚧 هذه الميزة قيد التطوير وستتوفر قريباً!")
+
+# عند اختيار الخدمة (مثلاً WhatsApp أو Facebook) -> عرض الدول المتاحة
+@bot.callback_query_handler(func=lambda call: call.data.startswith("service_"))
+def show_countries_for_service(call):
+    service_name = call.data.replace("service_", "").capitalize()
     if not number_manager.country_numbers:
         bot.answer_callback_query(call.id, "عفواً، لا توجد دول متاحة حالياً.")
         return
 
-    markup = types.InlineKeyboardMarkup(row_width=2)
+    markup = types.InlineKeyboardMarkup(row_width=1)
     for country in number_manager.country_numbers.keys():
-        # استخدام اسم الدولة كـ callback_data لجلب رقم منها لاحقاً
-        markup.add(types.InlineKeyboardButton(f"🏳️ {country}", callback_data=f"select_{country}"))
+        markup.add(types.InlineKeyboardButton(f"🇸🇾 / 🇪🇬 {country} | $0.0005/OTP", callback_data=f"country_{country}"))
+    
+    markup.add(types.InlineKeyboardButton("🔙 الرجوع للخدمات", callback_data="back_to_services"))
 
     bot.edit_message_text(
         chat_id=call.message.chat.id,
         message_id=call.message.message_id,
-        text="اختر الدولة التي تريد الحصول على رقم منها:",
+        text=f"📱 **اختر الدولة لـ {service_name}** 👇",
+        parse_mode="Markdown",
         reply_markup=markup
     )
 
-# عند اختيار دولة معينة، يتم جلب رقم عشوائي منها وإرساله للمستخدم
-@bot.callback_query_handler(func=lambda call: call.data.startswith("select_"))
-def get_random_number_for_country(call):
-    country_name = call.data.replace("select_", "")
-    
+# عند اختيار الدولة -> عرض الأرقام المطلوبة مثل الصورة تماماً
+@bot.callback_query_handler(func=lambda call: call.data.startswith("country_") or call.data == "change_number_action")
+def get_numbers_list(call):
+    if call.data == "change_number_action":
+        country_name = getattr(bot, 'last_country', list(number_manager.country_numbers.keys())[0])
+    else:
+        country_name = call.data.replace("country_", "")
+        bot.last_country = country_name
+
     if country_name in number_manager.country_numbers:
         numbers_list = number_manager.country_numbers[country_name]
-        if numbers_list:
-            chosen_number = random.choice(numbers_list)
-            bot.answer_callback_query(call.id, f"تم اختيار دولة {country_name} بنجاح!")
-            
-            markup = types.InlineKeyboardMarkup()
-            markup.add(types.InlineKeyboardButton("🔄 اختيار دولة أخرى", callback_data="change_country"))
-            
-            bot.edit_message_text(
-                chat_id=call.message.chat.id,
-                message_id=call.message.message_id,
-                text=f"📌 الدولة: **{country_name}**\n📞 الرقم هو:\n`{chosen_number}`",
-                parse_mode="Markdown",
-                reply_markup=markup
-            )
-        else:
-            bot.answer_callback_query(call.id, "عفواً، هذه الدولة لا تحتوي على أرقام حالياً.")
-    else:
-        bot.answer_callback_query(call.id, "عفواً، حدث خطأ ما، يرجى المحاولة مرة أخرى.")
+        # اختيار 4 أرقام عشوائية لعرضها مثل الصورة
+        sample_numbers = random.sample(numbers_list, min(4, len(numbers_list)))
+
+        text_msg = (
+            "⏳ **انتظار الكود...**\n"
+            "🟢 **ستستلم الرسائل تلقائياً عند وصولها**\n\n"
+        )
+        for num in sample_numbers:
+            text_msg += f"🇸🇾 `+{num}`\n"
+
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        markup.add(
+            types.InlineKeyboardButton("🔄 تغيير الرقم", callback_data="change_number_action"),
+            types.InlineKeyboardButton("🌍 تغيير الدولة", callback_data="back_to_services"),
+            types.InlineKeyboardButton("🔙 القائمة الرئيسية", callback_data="main_menu")
+        )
+
+        bot.edit_message_text(
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            text=text_msg,
+            parse_mode="Markdown",
+            reply_markup=markup
+        )
+
+# الرجوع للقائمة أو الخدمات
+@bot.callback_query_handler(func=lambda call: call.data in ["back_to_services", "main_menu"])
+def back_navigation(call):
+    if call.data == "back_to_services":
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        markup.add(
+            types.InlineKeyboardButton("📘 Facebook", callback_data="service_facebook"),
+            types.InlineKeyboardButton("💚 WhatsApp", callback_data="service_whatsapp"),
+            types.InlineKeyboardButton("📸 Instagram", callback_data="service_instagram"),
+            types.InlineKeyboardButton("🎵 TikTok", callback_data="service_tiktok")
+        )
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="🌐 **اختر الخدمة المطلوبة** 👇", parse_mode="Markdown", reply_markup=markup)
+    elif call.data == "main_menu":
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        bot.send_message(call.message.chat.id, "🏠 **القائمة الرئيسية**", reply_markup=get_main_reply_keyboard())
 
 if __name__ == "__main__":
     bot.infinity_polling()
+
 
 
     
