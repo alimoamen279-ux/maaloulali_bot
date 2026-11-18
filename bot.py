@@ -7,33 +7,34 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-class EgyptNumberManager:
-    def __init__(self, filename="Egypt (1).txt"):
-        self.filename = filename
+class MultiCountryNumberManager:
+    # ضع هنا أسماء كل ملفات الدول المرفوعة في المستودع
+    def __init__(self, filenames=["Egypt (1).txt", "Iraq_+964.txt"]):
+        self.filenames = filenames
         self.allowed_numbers = set()
-        self.load_numbers()
+        self.load_all_numbers()
 
-    def load_numbers(self):
+    def load_all_numbers(self):
         """
-        قراءة ملف الأرقام المصري وتحميلها إلى الذاكرة المؤقتة (Set)
+        قراءة جميع ملفات الأرقام المتاحة ودمجها في مجموعة واحدة (Set)
         """
-        if not os.path.exists(self.filename):
-            logging.error(f"الملف {self.filename} غير موجود.")
-            return
+        for filename in self.filenames:
+            if not os.path.exists(filename):
+                logging.error(f"الملف {filename} غير موجود.")
+                continue
 
-        try:
-            with open(self.filename, 'r', encoding='utf-8') as file:
-                count = 0
-                for line in file:
-                    cleaned_number = line.strip()
-                    if cleaned_number:
-                        self.allowed_numbers.add(cleaned_number)
-                        count += 1
+            try:
+                with open(filename, 'r', encoding='utf-8') as file:
+                    count = 0
+                    for line in file:
+                        cleaned_number = line.strip()
+                        if cleaned_number:
+                            self.allowed_numbers.add(cleaned_number)
+                            count += 1
+                logging.info(f"تم بنجاح تحميل {count} رقماً من ملف: {filename}")
             
-            logging.info(f"تم بنجاح تحميل {count} رقماً مصرياً من الملف.")
-        
-        except Exception as e:
-            logging.error(f"حدث خطأ أثناء قراءة الملف: {e}")
+            except Exception as e:
+                logging.error(f"حدث خطأ أثناء قراءة الملف {filename}: {e}")
 
     def is_authorized(self, phone_number):
         if not phone_number:
@@ -42,9 +43,10 @@ class EgyptNumberManager:
         return normalized_number in self.allowed_numbers
 
 if __name__ == "__main__":
-    # تشغيل مدير الأرقام المصري فقط
-    manager = EgyptNumberManager()
-    print(f"Bot is running successfully with {len(manager.allowed_numbers)} Egyptian numbers!")
+    # تشغيل مدير الأرقام لجميع الدول معاً
+    manager = MultiCountryNumberManager()
+    print(f"Bot is running successfully with total {len(manager.allowed_numbers)} numbers from all files!")
+    
     
     
   
