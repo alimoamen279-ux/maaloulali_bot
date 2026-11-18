@@ -7,22 +7,22 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-class MultiCountryNumberManager:
-    # ضع هنا أسماء كل ملفات الدول المرفوعة في المستودع
-    def __init__(self, filenames=["Egypt (1).txt", "Iraq_+964.txt"]):
-        self.filenames = filenames
+class AutoFolderNumberManager:
+    def __init__(self):
         self.allowed_numbers = set()
-        self.load_all_numbers()
+        self.load_all_txt_files()
 
-    def load_all_numbers(self):
+    def load_all_txt_files(self):
         """
-        قراءة جميع ملفات الأرقام المتاحة ودمجها في مجموعة واحدة (Set)
+        البحث تلقائياً عن جميع ملفات الـ .txt في المجلد وقراءتها دفعة واحدة
         """
-        for filename in self.filenames:
-            if not os.path.exists(filename):
-                logging.error(f"الملف {filename} غير موجود.")
-                continue
+        txt_files = [f for f in os.listdir('.') if f.endswith('.txt') and f != 'requirements.txt']
+        
+        if not txt_files:
+            logging.error("لم يتم العثور على أي ملفات نصية (.txt) في المجلد الرئيسي!")
+            return
 
+        for filename in txt_files:
             try:
                 with open(filename, 'r', encoding='utf-8') as file:
                     count = 0
@@ -31,7 +31,7 @@ class MultiCountryNumberManager:
                         if cleaned_number:
                             self.allowed_numbers.add(cleaned_number)
                             count += 1
-                logging.info(f"تم بنجاح تحميل {count} رقماً من ملف: {filename}")
+                logging.info(f"تم بنجاح تحميل {count} رقماً من الملف: {filename}")
             
             except Exception as e:
                 logging.error(f"حدث خطأ أثناء قراءة الملف {filename}: {e}")
@@ -43,10 +43,9 @@ class MultiCountryNumberManager:
         return normalized_number in self.allowed_numbers
 
 if __name__ == "__main__":
-    # تشغيل مدير الأرقام لجميع الدول معاً
-    manager = MultiCountryNumberManager()
-    print(f"Bot is running successfully with total {len(manager.allowed_numbers)} numbers from all files!")
-    
+    manager = AutoFolderNumberManager()
+    print(f"Bot is running successfully with total {len(manager.allowed_numbers)} numbers from all .txt files!")
+
     
     
   
