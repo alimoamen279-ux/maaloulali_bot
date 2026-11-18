@@ -36,7 +36,6 @@ class AutoFolderNumberManager:
 
 number_manager = AutoFolderNumberManager()
 
-# دالة إنشاء لوحة المفاتيح الرئيسية الثابتة في أسفل الشاشة (Reply Keyboard)
 def get_main_reply_keyboard():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
     btn_get_num = types.KeyboardButton("📞 الحصول على رقم")
@@ -48,7 +47,6 @@ def get_main_reply_keyboard():
     markup.add(btn_get_num, btn_share, btn_stats, btn_trafic, btn_prices, btn_about)
     return markup
 
-# أمر /start وإظهار القائمة الرئيسية
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     bot.send_message(
@@ -58,20 +56,18 @@ def send_welcome(message):
         reply_markup=get_main_reply_keyboard()
     )
 
-# التعامل مع الأزرار الثابتة في الأسفل
 @bot.message_handler(func=lambda message: True)
 def handle_text_messages(message):
     text = message.text
     chat_id = message.chat.id
 
     if text == "📞 الحصول على رقم":
-        # عرض خدمات التواصل الاجتماعي مثل الصورة
         markup = types.InlineKeyboardMarkup(row_width=1)
         markup.add(
-            types.InlineKeyboardButton("📘 Facebook", callback_data="service_facebook"),
-            types.InlineKeyboardButton("💚 WhatsApp", callback_data="service_whatsapp"),
-            types.InlineKeyboardButton("📸 Instagram", callback_data="service_instagram"),
-            types.InlineKeyboardButton("🎵 TikTok", callback_data="service_tiktok")
+            types.InlineKeyboardButton("📘 Facebook (20986)", callback_data="service_facebook"),
+            types.InlineKeyboardButton("💚 WhatsApp (11391)", callback_data="service_whatsapp"),
+            types.InlineKeyboardButton("📸 Instagram (600)", callback_data="service_instagram"),
+            types.InlineKeyboardButton("🎵 TikTok (1000)", callback_data="service_tiktok")
         )
         bot.send_message(chat_id, "🌐 **اختر الخدمة المطلوبة** 👇", parse_mode="Markdown", reply_markup=markup)
 
@@ -85,12 +81,11 @@ def handle_text_messages(message):
         bot.send_message(chat_id, stats_text, parse_mode="Markdown")
 
     elif text == "ℹ️ حول البوت":
-        bot.send_message(chat_id, "🤖 هذا البوت مخصص للتحقق من الأرقام وخدمات التفعيل السريع تعمل على مدار الساعة 24/7.")
+        bot.send_message(chat_id, "🤖 هذا البوت مخصص لتوفير الأرقام والخدمات السريعة يعمل على مدار الساعة 24/7.")
 
     elif text in ["📊 شارك واربح", "🔴 الترافيك المباشر", "🌍 أرباح الدول"]:
         bot.send_message(chat_id, "🚧 هذه الميزة قيد التطوير وستتوفر قريباً!")
 
-# عند اختيار الخدمة (مثلاً WhatsApp أو Facebook) -> عرض الدول المتاحة
 @bot.callback_query_handler(func=lambda call: call.data.startswith("service_"))
 def show_countries_for_service(call):
     service_name = call.data.replace("service_", "").capitalize()
@@ -100,7 +95,7 @@ def show_countries_for_service(call):
 
     markup = types.InlineKeyboardMarkup(row_width=1)
     for country in number_manager.country_numbers.keys():
-        markup.add(types.InlineKeyboardButton(f"🇸🇾 / 🇪🇬 {country} | $0.0005/OTP", callback_data=f"country_{country}"))
+        markup.add(types.InlineKeyboardButton(f"🇸🇾 {country} | $0.0005/OTP", callback_data=f"country_{country}"))
     
     markup.add(types.InlineKeyboardButton("🔙 الرجوع للخدمات", callback_data="back_to_services"))
 
@@ -112,7 +107,6 @@ def show_countries_for_service(call):
         reply_markup=markup
     )
 
-# عند اختيار الدولة -> عرض الأرقام المطلوبة مثل الصورة تماماً
 @bot.callback_query_handler(func=lambda call: call.data.startswith("country_") or call.data == "change_number_action")
 def get_numbers_list(call):
     if call.data == "change_number_action":
@@ -123,20 +117,23 @@ def get_numbers_list(call):
 
     if country_name in number_manager.country_numbers:
         numbers_list = number_manager.country_numbers[country_name]
-        # اختيار 4 أرقام عشوائية لعرضها مثل الصورة
         sample_numbers = random.sample(numbers_list, min(4, len(numbers_list)))
 
         text_msg = (
             "⏳ **انتظار الكود...**\n"
-            "🟢 **ستستلم الرسائل تلقائياً عند وصولها**\n\n"
+            "🟢 **ستستلم الرسائل تلقائياً عند وصولها**\n"
         )
-        for num in sample_numbers:
-            text_msg += f"🇸🇾 `+{num}`\n"
 
         markup = types.InlineKeyboardMarkup(row_width=1)
+        # إضافة كل رقم في زر منفصل مع أيقونة النسخ والعلم تماماً مثل الصورة المطلوبة
+        for num in sample_numbers:
+            markup.add(types.InlineKeyboardButton(f"🇸🇾 📋 +{num}", callback_data=f"copy_{num}"))
+
+        # أزرار التحكم مثل الصورة تماماً
         markup.add(
             types.InlineKeyboardButton("🔄 تغيير الرقم", callback_data="change_number_action"),
             types.InlineKeyboardButton("🌍 تغيير الدولة", callback_data="back_to_services"),
+            types.InlineKeyboardButton("🔑 جروب البوت", url="https://t.me/your_group_link"),
             types.InlineKeyboardButton("🔙 القائمة الرئيسية", callback_data="main_menu")
         )
 
@@ -148,16 +145,20 @@ def get_numbers_list(call):
             reply_markup=markup
         )
 
-# الرجوع للقائمة أو الخدمات
+@bot.callback_query_handler(func=lambda call: call.data.startswith("copy_"))
+def handle_copy_number(call):
+    phone_num = call.data.replace("copy_", "")
+    bot.answer_callback_query(call.id, f"تم نسخ الرقم: +{phone_num}", show_alert=True)
+
 @bot.callback_query_handler(func=lambda call: call.data in ["back_to_services", "main_menu"])
 def back_navigation(call):
     if call.data == "back_to_services":
         markup = types.InlineKeyboardMarkup(row_width=1)
         markup.add(
-            types.InlineKeyboardButton("📘 Facebook", callback_data="service_facebook"),
-            types.InlineKeyboardButton("💚 WhatsApp", callback_data="service_whatsapp"),
-            types.InlineKeyboardButton("📸 Instagram", callback_data="service_instagram"),
-            types.InlineKeyboardButton("🎵 TikTok", callback_data="service_tiktok")
+            types.InlineKeyboardButton("📘 Facebook (20986)", callback_data="service_facebook"),
+            types.InlineKeyboardButton("💚 WhatsApp (11391)", callback_data="service_whatsapp"),
+            types.InlineKeyboardButton("📸 Instagram (600)", callback_data="service_instagram"),
+            types.InlineKeyboardButton("🎵 TikTok (1000)", callback_data="service_tiktok")
         )
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="🌐 **اختر الخدمة المطلوبة** 👇", parse_mode="Markdown", reply_markup=markup)
     elif call.data == "main_menu":
@@ -166,6 +167,7 @@ def back_navigation(call):
 
 if __name__ == "__main__":
     bot.infinity_polling()
+
 
 
 
